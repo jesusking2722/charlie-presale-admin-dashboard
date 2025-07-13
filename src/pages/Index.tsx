@@ -1,8 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchAllUsers } from "@/lib/scripts/user.scripts";
-import { calculateUserGrowth } from "@/lib/utils";
+import { fetchAllUsers } from "@/lib/scripts/users.scripts";
+import { fetchAllTransactions } from "@/lib/scripts/transactions.scripts";
+import {
+  calculateMonthlyRevenueChange,
+  calculateMonthlyTransactionChange,
+  calculateTotalRevenueDollars,
+  calculateUserGrowth,
+  formatNumber,
+} from "@/lib/utils";
 import { Users, CreditCard, TrendingUp, DollarSign } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { ITransaction, IUser } from "@/types";
 
 const initialStats = [
   {
@@ -43,9 +51,19 @@ type TStat = {
   color: string;
 };
 
+type TRecentTransaction = {
+  id: string;
+  userEmail: string;
+  status: "pending" | "completed";
+  amount: number;
+};
+
 const Index = () => {
-  const [users, setUsers] = useState<any>(null);
+  const [users, setUsers] = useState<IUser[]>([]);
   const [stats, setStats] = useState<TStat[]>(initialStats);
+  const [recentTransactions, setRecentTransactions] = useState<
+    TRecentTransaction[]
+  >([]);
 
   const getAllUsers = useCallback(async () => {
     try {
@@ -53,6 +71,7 @@ const Index = () => {
       const usersList = response?.data?.users || [];
 
       setUsers(usersList);
+
       const percentChange = calculateUserGrowth(usersList);
 
       setStats((prevStats) =>
@@ -73,9 +92,85 @@ const Index = () => {
     }
   }, []);
 
+  const getAllTransactions = useCallback(async () => {
+    try {
+      const response = await fetchAllTransactions();
+
+      const txList = response?.data?.transactions || [];
+      const pendingTxList = txList.filter(
+        (tx: any) => tx?.status === "pending"
+      );
+
+      const totalPercentChange = calculateMonthlyTransactionChange(txList);
+      const pendingPercentChange =
+        calculateMonthlyTransactionChange(pendingTxList);
+      const revenuePercentChange = calculateMonthlyRevenueChange(txList);
+      const revenueUsd = calculateTotalRevenueDollars(txList);
+
+      const sortedTxList = [...txList].sort((a, b) => {
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
+
+      const recentTxList = sortedTxList
+        .slice(0, 3)
+        .filter((tx) => tx.status === "pending" || tx.status === "completed")
+        .map((tx) => {
+          const foundUser = users.find((u) => u._id === tx.user);
+          const tokenPrice =
+            parseFloat(tx.tokenPriceUSD) > 0
+              ? parseFloat(tx.tokenPrice)
+              : 0.0002;
+
+          return {
+            id: tx._id,
+            userEmail: foundUser?.email || "Unknown",
+            status: tx.status,
+            amount: parseFloat(tx.amountToken) * tokenPrice,
+          } as TRecentTransaction;
+        });
+
+      setRecentTransactions(recentTxList);
+
+      setStats((prevStats) =>
+        prevStats.map((stat) =>
+          stat.title.includes("Transactions")
+            ? {
+                ...stat,
+                value: txList.length.toLocaleString(),
+                change: `${
+                  totalPercentChange >= 0 ? "+" : ""
+                }${totalPercentChange.toFixed(2)}%`,
+              }
+            : stat.title.includes("Pending")
+            ? {
+                ...stat,
+                value: pendingTxList.length,
+                change: `${
+                  pendingPercentChange >= 0 ? "+" : ""
+                }${pendingPercentChange.toFixed(2)}%`,
+              }
+            : stat.title.includes("Total Revenue")
+            ? {
+                ...stat,
+                change: `${
+                  revenuePercentChange >= 0 ? "+" : ""
+                }${revenuePercentChange.toFixed(2)}%`,
+                value: `$${formatNumber(revenueUsd)}`,
+              }
+            : stat
+        )
+      );
+    } catch (error) {
+      console.error("get all transactions error: ", error);
+    }
+  }, []);
+
   useEffect(() => {
     getAllUsers();
-  }, [getAllUsers]);
+    getAllTransactions();
+  }, [getAllUsers, getAllTransactions]);
 
   return (
     <div className="space-y-6">
@@ -123,21 +218,24 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
+              {recentTransactions.map((tx, index) => (
                 <div
-                  key={i}
+                  key={index}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div>
-                    <p className="font-medium">Transaction #{1000 + i}</p>
+                    <p className="font-medium">
+                      Transaction #{tx.id.slice(0, 6)}...
+                      {tx.id.slice(-4)}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      user{i}@example.com
+                      {tx.userEmail}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">$1,{200 + i * 50}</p>
+                    <p className="font-medium">${formatNumber(tx.amount)}</p>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Pending
+                      {tx.status}
                     </span>
                   </div>
                 </div>
