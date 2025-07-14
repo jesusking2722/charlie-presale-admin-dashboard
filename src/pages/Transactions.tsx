@@ -26,7 +26,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Search, Filter, Eye, Send, Copy, CheckCheck } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Eye,
+  Send,
+  Copy,
+  CheckCheck,
+  Loader,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useData } from "@/components/DataProvider";
 import {
@@ -37,6 +45,7 @@ import {
 } from "@/lib/utils";
 import { useWeb3 } from "@/hooks/use-web3";
 import { useAppKitAccount } from "@reown/appkit/react";
+import { transferCHRLEToUser } from "@/lib/scripts/web3.scripts";
 
 type TTransaction = {
   _id: string;
@@ -65,7 +74,8 @@ const Transactions = () => {
 
   const { toast } = useToast();
 
-  const { users, transactions } = useData();
+  const { users, transactions, updateUserById, updateTransactionById } =
+    useData();
 
   const { address } = useAppKitAccount();
   const { sendCHRLEToUserWalletAddress } = useWeb3();
@@ -92,6 +102,7 @@ const Transactions = () => {
   };
 
   const handleSendTokens = async (tx: TTransaction) => {
+    debugger;
     try {
       setSendLoading(true);
       // await sendCHRLEToUserWalletAddress(
@@ -109,16 +120,34 @@ const Transactions = () => {
       if (txResult) {
         const { hash, timestamp } = txResult;
 
-        setFormattedTransactions((prev) =>
-          prev.map((tx) =>
-            tx._id === tx._id ? { ...tx, status: "completed" } : tx
-          )
+        const response = await transferCHRLEToUser(
+          tx._id,
+          hash,
+          timestamp,
+          tx.receiptAddress,
+          tx.userId
         );
-        toast({
-          title: "Tokens Sent Successfully",
-          description:
-            "CHRLE tokens have been transferred to the user's wallet.",
-        });
+
+        if (response.ok) {
+          const { user, transaction } = response.data;
+
+          updateUserById(user._id, user);
+          updateTransactionById(transaction._id, transaction);
+
+          setFormattedTransactions((prev) =>
+            prev.map((tx) =>
+              tx._id === transaction._id ? { ...tx, status: "completed" } : tx
+            )
+          );
+
+          toast({
+            title: "Tokens Sent Successfully",
+            description:
+              "CHRLE tokens have been transferred to the user's wallet.",
+          });
+        } else {
+          toast({ title: "Transfer failed", description: response.message });
+        }
       }
     } catch (error) {
       console.error("handle send tokens error: ", error);
@@ -481,22 +510,37 @@ const Transactions = () => {
 
                                 <div>
                                   <label className="text-sm font-medium text-muted-foreground">
-                                    Receiption Info
+                                    Receiption User's Email
+                                  </label>
+                                  <p className="font-medium">{tx.userEmail}</p>
+                                </div>
+
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Receiption User's Wallet Address
                                   </label>
                                   <p className="font-medium">
-                                    User email: {tx.userEmail}
-                                    <br />
-                                    User wallet address {tx.receiptAddress}
+                                    {tx.receiptAddress}
                                   </p>
                                 </div>
 
                                 <div className="w-full">
                                   <Button
                                     variant="secondary"
-                                    className="w-full"
+                                    className="w-full flex items-center justify-center gap-1 transition-all duration-200"
+                                    disabled={sendLoading}
                                     onClick={() => handleSendTokens(tx)}
                                   >
-                                    Send {tx.chrleAmount} CHRLE
+                                    {sendLoading ? (
+                                      <>
+                                        <span className="text-gray-400">
+                                          Sending...
+                                        </span>
+                                        <Loader className="h-4 w-4 text-gray-400" />
+                                      </>
+                                    ) : (
+                                      `Send ${tx.chrleAmount} CHRLE`
+                                    )}
                                   </Button>
                                 </div>
                               </div>

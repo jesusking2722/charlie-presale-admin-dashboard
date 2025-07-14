@@ -9,7 +9,8 @@ export const useWeb3 = () => {
 
   const { toast } = useToast();
 
-  const CHRLE_ADDRESS = process.env.CHRLE_ADDRESS;
+  const CHRLE_ADDRESS =
+    process.env.CHRLE_ADDRESS || "0xb9c337151178cf0ec9a6b13a121c661065a80f36";
 
   const getProvider = () => {
     if (!walletProvider || !chainId) return null;
@@ -92,6 +93,11 @@ export const useWeb3 = () => {
       };
     } catch (error) {
       console.error("send CHRLE to user wallet address error: ", error);
+      toast({
+        title: "Transaction failed",
+        description: "Blockchain has issue",
+        color: "red",
+      });
       return null;
     }
   };
