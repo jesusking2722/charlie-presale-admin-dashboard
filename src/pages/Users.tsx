@@ -11,13 +11,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Eye, Edit } from "lucide-react";
+import { Search, Eye, Copy, CheckCheck } from "lucide-react";
 import {
   calculateTotalSpentDollars,
   formatDateIntoISOString,
   formatNumber,
+  truncateTxHash,
+  truncateWalletAddress,
 } from "@/lib/utils";
 import { useData } from "@/components/DataProvider";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type TUser = {
   _id: string;
@@ -27,12 +37,16 @@ type TUser = {
   totalTransactions: number;
   totalSpent: number;
   balance: string;
+  walletAddress: string;
 };
 
 const Users = () => {
   const [formattedUsers, setFormattedUsers] = useState<TUser[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [isUserIdCopied, setIsUserIdCopied] = useState<boolean>(false);
+  const [isWalletAddressCopied, setIsWalletAddressCopied] =
+    useState<boolean>(false);
 
   const { users, transactions } = useData();
 
@@ -50,6 +64,22 @@ const Users = () => {
     } else {
       setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     }
+  };
+
+  const handleUserIdCopy = (userId: string) => {
+    navigator.clipboard.writeText(userId);
+    setIsUserIdCopied(true);
+    setTimeout(() => {
+      setIsUserIdCopied(false);
+    }, 2000);
+  };
+
+  const handleWalletAddressCopy = (walletAddress: string) => {
+    navigator.clipboard.writeText(walletAddress);
+    setIsWalletAddressCopied(true);
+    setTimeout(() => {
+      setIsWalletAddressCopied(false);
+    }, 2000);
   };
 
   useEffect(() => {
@@ -73,6 +103,7 @@ const Users = () => {
             totalTransactions: userTxs.length,
             totalSpent,
             balance: user.balance,
+            walletAddress: user.walletAddress,
           };
         });
 
@@ -151,6 +182,7 @@ const Users = () => {
                   <TableHead>Transactions</TableHead>
                   <TableHead>Total Spent</TableHead>
                   <TableHead>Balance</TableHead>
+                  <TableHead>Wallet Address</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -171,14 +203,112 @@ const Users = () => {
                     <TableCell>{user.totalTransactions}</TableCell>
                     <TableCell>${formatNumber(user.totalSpent)}</TableCell>
                     <TableCell>{user.balance} CHRLE</TableCell>
+                    <TableCell>
+                      {truncateWalletAddress(user.walletAddress)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>User Details</DialogTitle>
+                              <DialogDescription>
+                                View user information
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    ID
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium">
+                                      #{truncateTxHash(user._id)}
+                                    </p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleUserIdCopy(user._id)}
+                                    >
+                                      {!isUserIdCopied ? (
+                                        <Copy className="h-4 w-4" />
+                                      ) : (
+                                        <CheckCheck className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Name
+                                  </label>
+                                  <p className="font-medium">{user.name}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    User Email
+                                  </label>
+                                  <p className="font-medium">{user.email}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Total spent
+                                  </label>
+                                  <p className="font-medium">
+                                    ${user.totalSpent}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Balance
+                                  </label>
+                                  <p className="font-medium">
+                                    {user.balance} CHRLE
+                                  </p>
+                                </div>
+                                <div className="col-span-2">
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Wallet Address
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-mono text-sm break-all">
+                                      {user.walletAddress}
+                                    </p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleWalletAddressCopy(
+                                          user.walletAddress
+                                        )
+                                      }
+                                    >
+                                      {!isWalletAddressCopied ? (
+                                        <Copy className="h-4 w-4" />
+                                      ) : (
+                                        <CheckCheck className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="col-span-2">
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Registered Date
+                                  </label>
+                                  <p className="font-medium">
+                                    {user.registeredDate}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </TableCell>
                   </TableRow>
