@@ -131,7 +131,7 @@ export function calculateTotalRevenueDollars(
   return totalRevenueDollars;
 }
 
-export function calculateTotalSpentDollars(txs: ITransaction[]) {
+export function calculateTotalSpentDollars(txs: ITransaction[]): number {
   let totalSpent = 0;
 
   txs.forEach((tx) => {
@@ -154,6 +154,33 @@ export function formatNumber(
   }).format(value);
 }
 
-export function formatDateIntoISOString(date: string) {
+export function formatDateIntoISOString(date: string): string {
   return new Date(date).toISOString().slice(0, 10);
+}
+
+export const formatTransactionDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+};
+
+export function getCurrencySymbol(currency: "usd" | "eur" | "pln") {
+  return currency === "usd" ? "$" : currency === "eur" ? "€" : "zł";
+}
+
+export function truncateWalletAddress(walletaAddress: string): string {
+  if (!walletaAddress) return "-";
+  return `${walletaAddress.slice(0, 6)}...${walletaAddress.slice(-4)}`;
+}
+
+export function truncateTxHash(txHash: string): string {
+  if (!txHash) return "-";
+  return `${txHash.slice(0, 6)}...${txHash.slice(-4)}`;
 }

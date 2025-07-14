@@ -33,40 +33,8 @@ const Users = () => {
   const [formattedUsers, setFormattedUsers] = useState<TUser[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState("all");
 
   const { users, transactions } = useData();
-
-  const covertUsersData = useCallback(async () => {
-    if (users.length > 0) {
-      const formattedUsersList: TUser[] = users.map((user) => {
-        const userTxs = transactions.filter((tx) => tx.userId === user._id);
-        const totalSpent = calculateTotalSpentDollars(
-          userTxs.filter(
-            (tx) =>
-              (tx.type === "buy" && tx.status === "pending") ||
-              tx.status === "completed"
-          )
-        );
-
-        return {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          registeredDate: formatDateIntoISOString(user.createdAt),
-          totalTransactions: userTxs.length,
-          totalSpent,
-          balance: user.balance,
-        };
-      });
-
-      setFormattedUsers(formattedUsersList);
-    }
-  }, []);
-
-  useEffect(() => {
-    covertUsersData();
-  }, [covertUsersData]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -83,6 +51,37 @@ const Users = () => {
       setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     }
   };
+
+  useEffect(() => {
+    const covertUsersData = () => {
+      if (users.length > 0) {
+        const formattedUsersList: TUser[] = users.map((user) => {
+          const userTxs = transactions.filter((tx) => tx.userId === user._id);
+          const totalSpent = calculateTotalSpentDollars(
+            userTxs.filter(
+              (tx) =>
+                (tx.type === "buy" && tx.status === "pending") ||
+                tx.status === "completed"
+            )
+          );
+
+          return {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            registeredDate: formatDateIntoISOString(user.createdAt),
+            totalTransactions: userTxs.length,
+            totalSpent,
+            balance: user.balance,
+          };
+        });
+
+        setFormattedUsers(formattedUsersList);
+      }
+    };
+
+    covertUsersData();
+  }, [users, transactions]);
 
   return (
     <div className="space-y-6">
@@ -171,7 +170,7 @@ const Users = () => {
                     <TableCell>{user.registeredDate}</TableCell>
                     <TableCell>{user.totalTransactions}</TableCell>
                     <TableCell>${formatNumber(user.totalSpent)}</TableCell>
-                    <TableCell>{user.balance}</TableCell>
+                    <TableCell>{user.balance} CHRLE</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         <Button variant="ghost" size="sm">

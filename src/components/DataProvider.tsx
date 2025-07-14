@@ -79,9 +79,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    getAllUsers();
-    getAllTransactions();
-  }, [getAllUsers, getAllTransactions]);
+    (async () => {
+      await getAllUsers();
+      await getAllTransactions();
+    })();
+  }, []);
 
   return (
     <DataContext.Provider

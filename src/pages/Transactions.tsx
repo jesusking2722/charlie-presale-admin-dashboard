@@ -1,72 +1,77 @@
+import { useCallback, useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Search, Filter, Eye, Send, Copy, CheckCheck } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useData } from "@/components/DataProvider";
+import {
+  formatNumber,
+  formatTransactionDate,
+  getCurrencySymbol,
+  truncateTxHash,
+} from "@/lib/utils";
 
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Filter, Eye, Send, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+type TTransaction = {
+  _id: string;
+  type: "buy" | "withdraw";
+  userId: string;
+  userEmail: string;
+  amount: string;
+  chrleAmount: string;
+  status: "pending" | "failed" | "completed";
+  date: string;
+  receiptAddress: string;
+  hash: string | null;
+};
 
 const Transactions = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTransactions, setSelectedTransactions] = useState<string[]>(
+    []
+  );
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isTxIdCopied, setIsTxIdCopied] = useState<boolean>(false);
+  const [isTxHashCopied, setIsTxHashCopied] = useState<boolean>(false);
+  const [isReceiptWalletAddressCopied, setIsReceiptWalletAddressCopied] =
+    useState<boolean>(false);
+
   const { toast } = useToast();
 
+  const { users, transactions } = useData();
+
   // Mock transaction data
-  const [transactions, setTransactions] = useState([
-    {
-      id: '1',
-      userId: 'user1',
-      userEmail: 'john@example.com',
-      amount: '$1,200',
-      chrleAmount: '12,000 CHRLE',
-      status: 'pending',
-      date: '2024-01-25 14:30',
-      paymentMethod: 'Bank Transfer',
-      walletAddress: '0x1234...5678'
-    },
-    {
-      id: '2',
-      userId: 'user2',
-      userEmail: 'jane@example.com',
-      amount: '$800',
-      chrleAmount: '8,000 CHRLE',
-      status: 'completed',
-      date: '2024-01-24 10:15',
-      paymentMethod: 'Credit Card',
-      walletAddress: '0xabcd...efgh'
-    },
-    {
-      id: '3',
-      userId: 'user3',
-      userEmail: 'bob@example.com',
-      amount: '$2,500',
-      chrleAmount: '25,000 CHRLE',
-      status: 'pending',
-      date: '2024-01-25 09:45',
-      paymentMethod: 'PayPal',
-      walletAddress: '0x9876...5432'
-    },
-    {
-      id: '4',
-      userId: 'user4',
-      userEmail: 'alice@example.com',
-      amount: '$500',
-      chrleAmount: '5,000 CHRLE',
-      status: 'failed',
-      date: '2024-01-23 16:20',
-      paymentMethod: 'Bank Transfer',
-      walletAddress: '0xdef0...1234'
-    }
-  ]);
+  const [formattedTransactions, setFormattedTransactions] = useState<
+    TTransaction[]
+  >([]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTransactions(transactions.map(tx => tx.id));
+      setSelectedTransactions(formattedTransactions.map((tx) => tx._id));
     } else {
       setSelectedTransactions([]);
     }
@@ -76,15 +81,13 @@ const Transactions = () => {
     if (checked) {
       setSelectedTransactions([...selectedTransactions, txId]);
     } else {
-      setSelectedTransactions(selectedTransactions.filter(id => id !== txId));
+      setSelectedTransactions(selectedTransactions.filter((id) => id !== txId));
     }
   };
 
   const handleSendTokens = (txId: string) => {
-    setTransactions(prev => 
-      prev.map(tx => 
-        tx.id === txId ? { ...tx, status: 'completed' } : tx
-      )
+    setFormattedTransactions((prev) =>
+      prev.map((tx) => (tx._id === txId ? { ...tx, status: "completed" } : tx))
     );
     toast({
       title: "Tokens Sent Successfully",
@@ -93,23 +96,90 @@ const Transactions = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const baseClasses = "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
+    const baseClasses =
+      "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
     switch (status) {
-      case 'completed':
+      case "completed":
         return `${baseClasses} bg-green-100 text-green-800`;
-      case 'pending':
+      case "pending":
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      case 'failed':
+      case "failed":
         return `${baseClasses} bg-red-100 text-red-800`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
     }
   };
 
+  const handleTxIdCopy = (txId: string) => {
+    navigator.clipboard.writeText(txId);
+    setIsTxIdCopied(true);
+    setTimeout(() => {
+      setIsTxIdCopied(false);
+    }, 2000);
+  };
+
+  const handleTxHashCopy = (txHash: string) => {
+    navigator.clipboard.writeText(txHash);
+    setIsTxHashCopied(true);
+    setTimeout(() => {
+      setIsTxHashCopied(false);
+    }, 2000);
+  };
+
+  const handleReceiptWalletAddressCopy = (receiptWalletAddress: string) => {
+    navigator.clipboard.writeText(receiptWalletAddress);
+    setIsReceiptWalletAddressCopied(true);
+    setTimeout(() => {
+      setIsReceiptWalletAddressCopied(false);
+    }, 2000);
+  };
+
+  const handleViewTxHash = (txHash: string) => {
+    window.open(
+      `https://bscscan.com/tx/${txHash}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  useEffect(() => {
+    const covertTransactionData = () => {
+      const formattedTransactionList: TTransaction[] = transactions.map(
+        (tx) => {
+          const userEmail =
+            users.find((user) => user._id === tx.userId)?.email ?? "Unknown";
+          const amount = `${getCurrencySymbol(tx.currency)}${formatNumber(
+            tx.amountFiat / 100
+          )}`;
+          const formattedDate = formatTransactionDate(tx.createdAt);
+
+          return {
+            _id: tx._id,
+            type: tx.type,
+            userId: tx.userId,
+            userEmail: userEmail,
+            amount,
+            chrleAmount: tx.amountToken,
+            status: tx.status,
+            receiptAddress: tx.to,
+            hash: tx.txHash,
+            date: formattedDate,
+          };
+        }
+      );
+
+      setFormattedTransactions(formattedTransactionList);
+    };
+
+    covertTransactionData();
+  }, [users, transactions]);
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Transactions Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Transactions Management
+        </h1>
         <p className="text-muted-foreground">
           Monitor and process CHRLE token transactions
         </p>
@@ -134,7 +204,7 @@ const Transactions = () => {
                 className="pl-10"
               />
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="select-all-tx"
@@ -178,18 +248,22 @@ const Transactions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((tx) => (
-                  <TableRow key={tx.id}>
+                {formattedTransactions.map((tx) => (
+                  <TableRow key={tx._id}>
                     <TableCell>
                       <Checkbox
-                        checked={selectedTransactions.includes(tx.id)}
-                        onCheckedChange={(checked) => handleSelectTransaction(tx.id, checked as boolean)}
+                        checked={selectedTransactions.includes(tx._id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectTransaction(tx._id, checked as boolean)
+                        }
                       />
                     </TableCell>
-                    <TableCell className="font-medium">#{tx.id.padStart(4, '0')}</TableCell>
+                    <TableCell className="font-medium">
+                      #{tx._id.padStart(4, "0")}
+                    </TableCell>
                     <TableCell>{tx.userEmail}</TableCell>
                     <TableCell>{tx.amount}</TableCell>
-                    <TableCell>{tx.chrleAmount}</TableCell>
+                    <TableCell>{tx.chrleAmount} CHRLE</TableCell>
                     <TableCell>
                       <span className={getStatusBadge(tx.status)}>
                         {tx.status}
@@ -212,49 +286,137 @@ const Transactions = () => {
                               </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                  <label className="text-sm font-medium text-muted-foreground">Transaction ID</label>
-                                  <p className="font-medium">#{tx.id.padStart(4, '0')}</p>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Transaction ID
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium">
+                                      #{truncateTxHash(tx._id)}
+                                    </p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleTxIdCopy(tx._id)}
+                                    >
+                                      {!isTxIdCopied ? (
+                                        <Copy className="h-4 w-4" />
+                                      ) : (
+                                        <CheckCheck className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
                                 </div>
                                 <div>
-                                  <label className="text-sm font-medium text-muted-foreground">Status</label>
-                                  <p><span className={getStatusBadge(tx.status)}>{tx.status}</span></p>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Status
+                                  </label>
+                                  <p>
+                                    <span className={getStatusBadge(tx.status)}>
+                                      {tx.status}
+                                    </span>
+                                  </p>
                                 </div>
                                 <div>
-                                  <label className="text-sm font-medium text-muted-foreground">User Email</label>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    User Email
+                                  </label>
                                   <p className="font-medium">{tx.userEmail}</p>
                                 </div>
                                 <div>
-                                  <label className="text-sm font-medium text-muted-foreground">Payment Method</label>
-                                  <p className="font-medium">{tx.paymentMethod}</p>
-                                </div>
-                                <div>
-                                  <label className="text-sm font-medium text-muted-foreground">Fiat Amount</label>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Fiat Amount
+                                  </label>
                                   <p className="font-medium">{tx.amount}</p>
                                 </div>
                                 <div>
-                                  <label className="text-sm font-medium text-muted-foreground">CHRLE Tokens</label>
-                                  <p className="font-medium">{tx.chrleAmount}</p>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    CHRLE Tokens
+                                  </label>
+                                  <p className="font-medium">
+                                    {tx.chrleAmount} CHRLE
+                                  </p>
                                 </div>
                                 <div className="col-span-2">
-                                  <label className="text-sm font-medium text-muted-foreground">Wallet Address</label>
-                                  <p className="font-mono text-sm break-all">{tx.walletAddress}</p>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Receiption Address
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-mono text-sm break-all">
+                                      {tx.receiptAddress}
+                                    </p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleReceiptWalletAddressCopy(
+                                          tx.receiptAddress
+                                        )
+                                      }
+                                    >
+                                      {!isReceiptWalletAddressCopied ? (
+                                        <Copy className="h-4 w-4" />
+                                      ) : (
+                                        <CheckCheck className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
                                 </div>
+                                {tx.hash && (
+                                  <div className="col-span-2">
+                                    <label className="text-sm font-medium text-muted-foreground">
+                                      Transaction Hash
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-mono text-sm break-all">
+                                        {truncateTxHash(tx.hash)}
+                                      </p>
+
+                                      <div className="flex items-center gap-0">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleTxHashCopy(tx.hash)
+                                          }
+                                        >
+                                          {!isTxHashCopied ? (
+                                            <Copy className="h-4 w-4" />
+                                          ) : (
+                                            <CheckCheck className="h-4 w-4" />
+                                          )}
+                                        </Button>
+
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleViewTxHash(tx.hash)
+                                          }
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                                 <div className="col-span-2">
-                                  <label className="text-sm font-medium text-muted-foreground">Date</label>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Date
+                                  </label>
                                   <p className="font-medium">{tx.date}</p>
                                 </div>
                               </div>
                             </div>
                           </DialogContent>
                         </Dialog>
-                        
-                        {tx.status === 'pending' && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleSendTokens(tx.id)}
+
+                        {tx.status === "pending" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSendTokens(tx._id)}
                             className="text-green-600 hover:text-green-700"
                           >
                             <Send className="h-4 w-4" />
