@@ -61,19 +61,19 @@ export const useWeb3 = () => {
         return null;
       }
 
-      const gasEstimate = await chrleContract.transfer.estimateGas(
-        address,
-        amountInWei
-      );
+      // const gasEstimate = await chrleContract.transfer.estimateGas(
+      //   address,
+      //   amountInWei
+      // );
 
-      const gasPriceHex = await provider.send("eth_gasPrice", []);
-      const gasPrice = BigInt(gasPriceHex);
+      // const gasPriceHex = await provider.send("eth_gasPrice", []);
+      // const gasPrice = BigInt(gasPriceHex);
 
-      const gasFee = gasEstimate * gasPrice;
+      // const gasFee = gasEstimate * gasPrice;
 
       const ownerBnbBalance = await provider.getBalance(address);
 
-      if (ownerBnbBalance < gasFee) {
+      if (ownerBnbBalance <= 0) {
         toast({
           title: "Transaction failed",
           description: "Not enough BNB for gas fee!",

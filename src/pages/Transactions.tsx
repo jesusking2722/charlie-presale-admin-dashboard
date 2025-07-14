@@ -44,7 +44,7 @@ import {
   truncateTxHash,
 } from "@/lib/utils";
 import { useWeb3 } from "@/hooks/use-web3";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { transferCHRLEToUser } from "@/lib/scripts/web3.scripts";
 
 type TTransaction = {
@@ -77,7 +77,8 @@ const Transactions = () => {
   const { users, transactions, updateUserById, updateTransactionById } =
     useData();
 
-  const { address } = useAppKitAccount();
+  const { open } = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
   const { sendCHRLEToUserWalletAddress } = useWeb3();
 
   // Mock transaction data
@@ -102,7 +103,6 @@ const Transactions = () => {
   };
 
   const handleSendTokens = async (tx: TTransaction) => {
-    debugger;
     try {
       setSendLoading(true);
       // await sendCHRLEToUserWalletAddress(
@@ -529,9 +529,17 @@ const Transactions = () => {
                                     variant="secondary"
                                     className="w-full flex items-center justify-center gap-1 transition-all duration-200"
                                     disabled={sendLoading}
-                                    onClick={() => handleSendTokens(tx)}
+                                    onClick={() => {
+                                      if (!isConnected) {
+                                        open();
+                                      } else {
+                                        handleSendTokens(tx);
+                                      }
+                                    }}
                                   >
-                                    {sendLoading ? (
+                                    {!isConnected ? (
+                                      "Connect Wallet"
+                                    ) : sendLoading ? (
                                       <>
                                         <span className="text-gray-400">
                                           Sending...
