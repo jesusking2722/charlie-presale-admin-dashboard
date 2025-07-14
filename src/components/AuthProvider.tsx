@@ -1,7 +1,8 @@
 import { useToast } from "@/hooks/use-toast";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { login as apiLogin } from "@/lib/scripts/auth.scripts";
+import { login as apiLogin, fetchMe } from "@/lib/scripts/auth.scripts";
 import { setAuthToken } from "@/lib/fetchInstance";
+import { jwtDecode } from "jwt-decode";
 
 interface User {
   _id: string;
@@ -35,10 +36,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    const validateAuth = async () => {
+      const token = localStorage.getItem("Authorization");
+      if (token) {
+        const payload = jwtDecode(token) as any;
+
+        if (payload && payload.exp * 1000 < Date.now()) {
+          logout();
+          window.location.href = "/login";
+          return;
+        }
+
+        setAuthToken(token);
+        const response = await fetchMe(payload.id as string);
+
+        if (response.ok) {
+          const { user } = response.data;
+          setUser(user);
+        } else {
+          logout();
+          window.location.href = "/login";
+        }
+      }
+    };
+
+    validateAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -49,9 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const { user, token } = response.data;
         setAuthToken(token);
         setUser(user);
-
-        localStorage.setItem("user", JSON.stringify(user));
-
         return true;
       } else {
         toast({

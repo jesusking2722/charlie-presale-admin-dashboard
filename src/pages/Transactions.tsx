@@ -243,6 +243,7 @@ const Transactions = () => {
                   <TableHead>Amount</TableHead>
                   <TableHead>CHRLE Tokens</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Transaction Hash</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -269,6 +270,7 @@ const Transactions = () => {
                         {tx.status}
                       </span>
                     </TableCell>
+                    <TableCell>{truncateTxHash(tx.hash ?? "")}</TableCell>
                     <TableCell>{tx.date}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
@@ -413,14 +415,56 @@ const Transactions = () => {
                         </Dialog>
 
                         {tx.status === "pending" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleSendTokens(tx._id)}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Confirm</DialogTitle>
+                                <DialogDescription>
+                                  Confirm to send {tx.chrleAmount} CHRLE to{" "}
+                                  {tx.userEmail}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Amount
+                                  </label>
+                                  <p className="font-medium">
+                                    {tx.chrleAmount} CHRLE
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Receiption Info
+                                  </label>
+                                  <p className="font-medium">
+                                    User email: {tx.userEmail}
+                                    <br />
+                                    User wallet address {tx.receiptAddress}
+                                  </p>
+                                </div>
+
+                                <div className="w-full">
+                                  <Button
+                                    variant="secondary"
+                                    className="w-full"
+                                  >
+                                    Send {tx.chrleAmount} CHRLE
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         )}
                       </div>
                     </TableCell>

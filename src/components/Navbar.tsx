@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Users, CreditCard, Wallet, LogOut } from "lucide-react";
 import { useAuth } from "./AuthProvider";
-import { cn } from "@/lib/utils";
+import { cn, truncateWalletAddress } from "@/lib/utils";
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { logout } = useAuth();
+  const { open } = useAppKit();
+  const { isConnected, address } = useAppKitAccount();
 
   const navItems = [
     { name: "Users", href: "/users", icon: Users },
@@ -49,9 +52,17 @@ const Navbar = () => {
               </Link>
             ))}
 
-            <Button variant="outline" className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              className="flex items-center space-x-2"
+              onClick={() => open()}
+            >
               <Wallet className="h-4 w-4" />
-              <span>Connect Wallet</span>
+              <span>
+                {isConnected
+                  ? truncateWalletAddress(address)
+                  : "Connect Wallet"}
+              </span>
             </Button>
 
             <Link to="/settings">
@@ -96,7 +107,12 @@ const Navbar = () => {
                   className="justify-start space-x-3 h-12"
                 >
                   <Wallet className="h-5 w-5" />
-                  <span>Connect Wallet</span>
+                  <span>
+                    {" "}
+                    {isConnected
+                      ? truncateWalletAddress(address)
+                      : "Connect Wallet"}
+                  </span>
                 </Button>
 
                 <Link to="/settings" onClick={() => setIsOpen(false)}>

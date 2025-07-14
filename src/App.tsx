@@ -13,6 +13,36 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { DataProvider } from "./components/DataProvider";
+import { createAppKit } from "@reown/appkit/react";
+import { EthersAdapter } from "@reown/appkit-adapter-ethers";
+import { bsc } from "@reown/appkit/networks";
+
+const projectId = "0a22b2d60a1b3b87a850f5baba81f7f2";
+
+const networks = [bsc];
+
+const metadata = {
+  name: "Charlie Presale Admin Dashboard",
+  description: "Admin Dashboard of Presale powered by Charlie Unicorn AI",
+  url: "https://admin-charlieunicornai-presale.vercel.app",
+  icons: ["https://assets.reown.com/reown-profile-pic.png"],
+};
+
+createAppKit({
+  adapters: [new EthersAdapter()],
+  networks: networks as any,
+  metadata,
+  projectId,
+  features: {
+    analytics: true,
+    email: false,
+    socials: false,
+    history: false,
+    swaps: false,
+    send: false,
+  },
+  themeMode: localStorage.getItem("theme") as any,
+});
 
 const queryClient = new QueryClient();
 
