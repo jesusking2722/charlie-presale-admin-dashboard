@@ -67,99 +67,88 @@ const Index = () => {
 
   const { users, transactions } = useData();
 
-  const covertUsersData = useCallback(async () => {
-    try {
-      const percentChange = calculateUserGrowth(users);
+  const covertUsersData = useCallback(() => {
+    const percentChange = calculateUserGrowth(users);
 
-      setStats((prevStats) =>
-        prevStats.map((stat) =>
-          stat.title.includes("Users")
-            ? {
-                ...stat,
-                value: users.length.toLocaleString(),
-                change: `${
-                  percentChange >= 0 ? "+" : ""
-                }${percentChange.toFixed(2)}%`,
-              }
-            : stat
-        )
-      );
-    } catch (error) {
-      console.error("get all users error: ", error);
-    }
+    setStats((prevStats) =>
+      prevStats.map((stat) =>
+        stat.title.includes("Users")
+          ? {
+              ...stat,
+              value: users.length.toLocaleString(),
+              change: `${percentChange >= 0 ? "+" : ""}${percentChange.toFixed(
+                2
+              )}%`,
+            }
+          : stat
+      )
+    );
   }, []);
 
-  const convertTransactionsData = useCallback(async () => {
-    try {
-      const pendingTxList = transactions.filter(
-        (tx: any) => tx?.status === "pending"
-      );
+  const convertTransactionsData = useCallback(() => {
+    const pendingTxList = transactions.filter(
+      (tx: any) => tx?.status === "pending"
+    );
 
-      const totalPercentChange =
-        calculateMonthlyTransactionChange(transactions);
-      const pendingPercentChange =
-        calculateMonthlyTransactionChange(pendingTxList);
-      const revenuePercentChange = calculateMonthlyRevenueChange(transactions);
-      const revenueUsd = calculateTotalRevenueDollars(transactions);
+    const totalPercentChange = calculateMonthlyTransactionChange(transactions);
+    const pendingPercentChange =
+      calculateMonthlyTransactionChange(pendingTxList);
+    const revenuePercentChange = calculateMonthlyRevenueChange(transactions);
+    const revenueUsd = calculateTotalRevenueDollars(transactions);
 
-      const sortedTxList = [...transactions].sort((a, b) => {
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+    const sortedTxList = [...transactions].sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    const recentTxList = sortedTxList
+      .slice(0, 3)
+      .filter((tx) => tx.status === "pending" || tx.status === "completed")
+      .map((tx) => {
+        const foundUser = users.find((u) => u._id === tx.userId);
+        const tokenPrice =
+          parseFloat(tx.tokenPriceUSD) > 0
+            ? parseFloat(tx.tokenPriceUSD)
+            : 0.0002;
+
+        return {
+          id: tx._id,
+          userEmail: foundUser?.email || "Unknown",
+          status: tx.status,
+          amount: parseFloat(tx.amountToken) * tokenPrice,
+        } as TRecentTransaction;
       });
 
-      const recentTxList = sortedTxList
-        .slice(0, 3)
-        .filter((tx) => tx.status === "pending" || tx.status === "completed")
-        .map((tx) => {
-          const foundUser = users.find((u) => u._id === tx.userId);
-          const tokenPrice =
-            parseFloat(tx.tokenPriceUSD) > 0
-              ? parseFloat(tx.tokenPriceUSD)
-              : 0.0002;
+    setRecentTransactions(recentTxList);
 
-          return {
-            id: tx._id,
-            userEmail: foundUser?.email || "Unknown",
-            status: tx.status,
-            amount: parseFloat(tx.amountToken) * tokenPrice,
-          } as TRecentTransaction;
-        });
-
-      setRecentTransactions(recentTxList);
-
-      setStats((prevStats) =>
-        prevStats.map((stat) =>
-          stat.title.includes("Transactions")
-            ? {
-                ...stat,
-                value: transactions.length.toLocaleString(),
-                change: `${
-                  totalPercentChange >= 0 ? "+" : ""
-                }${totalPercentChange.toFixed(2)}%`,
-              }
-            : stat.title.includes("Pending")
-            ? {
-                ...stat,
-                value: pendingTxList.length.toLocaleString(),
-                change: `${
-                  pendingPercentChange >= 0 ? "+" : ""
-                }${pendingPercentChange.toFixed(2)}%`,
-              }
-            : stat.title.includes("Total Revenue")
-            ? {
-                ...stat,
-                change: `${
-                  revenuePercentChange >= 0 ? "+" : ""
-                }${revenuePercentChange.toFixed(2)}%`,
-                value: `$${formatNumber(revenueUsd)}`,
-              }
-            : stat
-        )
-      );
-    } catch (error) {
-      console.error("get all transactions error: ", error);
-    }
+    setStats((prevStats) =>
+      prevStats.map((stat) =>
+        stat.title.includes("Transactions")
+          ? {
+              ...stat,
+              value: transactions.length.toLocaleString(),
+              change: `${
+                totalPercentChange >= 0 ? "+" : ""
+              }${totalPercentChange.toFixed(2)}%`,
+            }
+          : stat.title.includes("Pending")
+          ? {
+              ...stat,
+              value: pendingTxList.length.toLocaleString(),
+              change: `${
+                pendingPercentChange >= 0 ? "+" : ""
+              }${pendingPercentChange.toFixed(2)}%`,
+            }
+          : stat.title.includes("Total Revenue")
+          ? {
+              ...stat,
+              change: `${
+                revenuePercentChange >= 0 ? "+" : ""
+              }${revenuePercentChange.toFixed(2)}%`,
+              value: `$${formatNumber(revenueUsd)}`,
+            }
+          : stat
+      )
+    );
   }, []);
 
   useEffect(() => {

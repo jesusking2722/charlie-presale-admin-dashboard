@@ -131,6 +131,18 @@ export function calculateTotalRevenueDollars(
   return totalRevenueDollars;
 }
 
+export function calculateTotalSpentDollars(txs: ITransaction[]) {
+  let totalSpent = 0;
+
+  txs.forEach((tx) => {
+    const tokenPrice =
+      parseFloat(tx.tokenPriceUSD) > 0 ? parseFloat(tx.tokenPriceUSD) : 0.0002;
+    totalSpent += tokenPrice * parseFloat(tx.amountToken);
+  });
+
+  return totalSpent;
+}
+
 export function formatNumber(
   value: number,
   minimumFractionDigits = 0,

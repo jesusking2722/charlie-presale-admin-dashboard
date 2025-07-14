@@ -3,13 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -18,11 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
-import { fetchAllUsers } from "@/lib/scripts/users.scripts";
-import { formatDateIntoISOString } from "@/lib/utils";
-import { fetchAllTransactions } from "@/lib/scripts/transactions.scripts";
-import { ITransaction } from "@/types";
+import { Search, Eye, Edit } from "lucide-react";
+import {
+  calculateTotalSpentDollars,
+  formatDateIntoISOString,
+  formatNumber,
+} from "@/lib/utils";
+import { useData } from "@/components/DataProvider";
 
 type TUser = {
   _id: string;
@@ -35,44 +30,43 @@ type TUser = {
 };
 
 const Users = () => {
-  const [users, setUsers] = useState<TUser[]>([]);
-  const [transactions, setTransactions] = useState<ITransaction[]>([]);
+  const [formattedUsers, setFormattedUsers] = useState<TUser[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const getAllUsers = useCallback(async () => {
-    try {
-      const response = await fetchAllUsers();
-      const usersList = response?.data?.users || [];
+  const { users, transactions } = useData();
 
-      if (usersList.length > 0) {
-        const formattedUsersList = usersList.map((user) => ({
-          ...user,
+  const covertUsersData = useCallback(async () => {
+    if (users.length > 0) {
+      const formattedUsersList: TUser[] = users.map((user) => {
+        const userTxs = transactions.filter((tx) => tx.userId === user._id);
+        const totalSpent = calculateTotalSpentDollars(
+          userTxs.filter(
+            (tx) =>
+              (tx.type === "buy" && tx.status === "pending") ||
+              tx.status === "completed"
+          )
+        );
+
+        return {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
           registeredDate: formatDateIntoISOString(user.createdAt),
-        }));
-      }
-    } catch (error) {
-      console.error("get all users error: ", error);
-    }
-  }, []);
+          totalTransactions: userTxs.length,
+          totalSpent,
+          balance: user.balance,
+        };
+      });
 
-  const getAllTransactions = useCallback(async () => {
-    try {
-      const response = await fetchAllTransactions();
-
-      const txList = response?.data?.transactions || [];
-
-      setTransactions(txList);
-    } catch (error) {
-      console.error("get all transactions error: ", error);
+      setFormattedUsers(formattedUsersList);
     }
   }, []);
 
   useEffect(() => {
-    getAllTransactions();
-    getAllUsers();
-  }, [getAllTransactions, getAllUsers]);
+    covertUsersData();
+  }, [covertUsersData]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -87,21 +81,6 @@ const Users = () => {
       setSelectedUsers([...selectedUsers, userId]);
     } else {
       setSelectedUsers(selectedUsers.filter((id) => id !== userId));
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const baseClasses =
-      "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
-    switch (status) {
-      case "active":
-        return `${baseClasses} bg-green-100 text-green-800`;
-      case "inactive":
-        return `${baseClasses} bg-red-100 text-red-800`;
-      case "pending":
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
     }
   };
 
@@ -145,7 +124,7 @@ const Users = () => {
               </label>
             </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            {/* <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by status" />
@@ -156,7 +135,7 @@ const Users = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
           </div>
 
           {/* Table */}
@@ -177,7 +156,7 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {formattedUsers.map((user) => (
                   <TableRow key={user._id}>
                     <TableCell>
                       <Checkbox
@@ -191,7 +170,8 @@ const Users = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.registeredDate}</TableCell>
                     <TableCell>{user.totalTransactions}</TableCell>
-                    <TableCell>{user.totalSpent}</TableCell>
+                    <TableCell>${formatNumber(user.totalSpent)}</TableCell>
+                    <TableCell>{user.balance}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         <Button variant="ghost" size="sm">
@@ -199,13 +179,6 @@ const Users = () => {
                         </Button>
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
