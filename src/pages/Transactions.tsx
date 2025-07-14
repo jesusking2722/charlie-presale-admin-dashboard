@@ -35,6 +35,8 @@ import {
   getCurrencySymbol,
   truncateTxHash,
 } from "@/lib/utils";
+import { useWeb3 } from "@/hooks/use-web3";
+import { useAppKitAccount } from "@reown/appkit/react";
 
 type TTransaction = {
   _id: string;
@@ -59,10 +61,14 @@ const Transactions = () => {
   const [isTxHashCopied, setIsTxHashCopied] = useState<boolean>(false);
   const [isReceiptWalletAddressCopied, setIsReceiptWalletAddressCopied] =
     useState<boolean>(false);
+  const [sendLoading, setSendLoading] = useState<boolean>(false);
 
   const { toast } = useToast();
 
   const { users, transactions } = useData();
+
+  const { address } = useAppKitAccount();
+  const { sendCHRLEToUserWalletAddress } = useWeb3();
 
   // Mock transaction data
   const [formattedTransactions, setFormattedTransactions] = useState<
@@ -85,14 +91,44 @@ const Transactions = () => {
     }
   };
 
-  const handleSendTokens = (txId: string) => {
-    setFormattedTransactions((prev) =>
-      prev.map((tx) => (tx._id === txId ? { ...tx, status: "completed" } : tx))
-    );
-    toast({
-      title: "Tokens Sent Successfully",
-      description: "CHRLE tokens have been transferred to the user's wallet.",
-    });
+  const handleSendTokens = async (tx: TTransaction) => {
+    try {
+      setSendLoading(true);
+      // await sendCHRLEToUserWalletAddress(
+      //   tx.chrleAmount,
+      //   address,
+      //   tx.receiptAddress
+      // );
+
+      const txResult = await sendCHRLEToUserWalletAddress(
+        "10",
+        address,
+        tx.receiptAddress
+      );
+
+      if (txResult) {
+        const { hash, timestamp } = txResult;
+
+        setFormattedTransactions((prev) =>
+          prev.map((tx) =>
+            tx._id === tx._id ? { ...tx, status: "completed" } : tx
+          )
+        );
+        toast({
+          title: "Tokens Sent Successfully",
+          description:
+            "CHRLE tokens have been transferred to the user's wallet.",
+        });
+      }
+    } catch (error) {
+      console.error("handle send tokens error: ", error);
+      toast({
+        title: "Transaction failed",
+        description: "Something went wrong",
+      });
+    } finally {
+      setSendLoading(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -458,6 +494,7 @@ const Transactions = () => {
                                   <Button
                                     variant="secondary"
                                     className="w-full"
+                                    onClick={() => handleSendTokens(tx)}
                                   >
                                     Send {tx.chrleAmount} CHRLE
                                   </Button>
