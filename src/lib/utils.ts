@@ -141,3 +141,7 @@ export function formatNumber(
     maximumFractionDigits,
   }).format(value);
 }
+
+export function formatDateIntoISOString(date: string) {
+  return new Date(date).toISOString().slice(0, 10);
+}

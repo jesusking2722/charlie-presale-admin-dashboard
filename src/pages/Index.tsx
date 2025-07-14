@@ -11,6 +11,7 @@ import {
 import { Users, CreditCard, TrendingUp, DollarSign } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { ITransaction, IUser } from "@/types";
+import { useData } from "@/components/DataProvider";
 
 const initialStats = [
   {
@@ -59,27 +60,23 @@ type TRecentTransaction = {
 };
 
 const Index = () => {
-  const [users, setUsers] = useState<IUser[]>([]);
   const [stats, setStats] = useState<TStat[]>(initialStats);
   const [recentTransactions, setRecentTransactions] = useState<
     TRecentTransaction[]
   >([]);
 
-  const getAllUsers = useCallback(async () => {
+  const { users, transactions } = useData();
+
+  const covertUsersData = useCallback(async () => {
     try {
-      const response = await fetchAllUsers();
-      const usersList = response?.data?.users || [];
-
-      setUsers(usersList);
-
-      const percentChange = calculateUserGrowth(usersList);
+      const percentChange = calculateUserGrowth(users);
 
       setStats((prevStats) =>
         prevStats.map((stat) =>
           stat.title.includes("Users")
             ? {
                 ...stat,
-                value: usersList.length.toLocaleString(),
+                value: users.length.toLocaleString(),
                 change: `${
                   percentChange >= 0 ? "+" : ""
                 }${percentChange.toFixed(2)}%`,
@@ -92,22 +89,20 @@ const Index = () => {
     }
   }, []);
 
-  const getAllTransactions = useCallback(async () => {
+  const convertTransactionsData = useCallback(async () => {
     try {
-      const response = await fetchAllTransactions();
-
-      const txList = response?.data?.transactions || [];
-      const pendingTxList = txList.filter(
+      const pendingTxList = transactions.filter(
         (tx: any) => tx?.status === "pending"
       );
 
-      const totalPercentChange = calculateMonthlyTransactionChange(txList);
+      const totalPercentChange =
+        calculateMonthlyTransactionChange(transactions);
       const pendingPercentChange =
         calculateMonthlyTransactionChange(pendingTxList);
-      const revenuePercentChange = calculateMonthlyRevenueChange(txList);
-      const revenueUsd = calculateTotalRevenueDollars(txList);
+      const revenuePercentChange = calculateMonthlyRevenueChange(transactions);
+      const revenueUsd = calculateTotalRevenueDollars(transactions);
 
-      const sortedTxList = [...txList].sort((a, b) => {
+      const sortedTxList = [...transactions].sort((a, b) => {
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
@@ -117,10 +112,10 @@ const Index = () => {
         .slice(0, 3)
         .filter((tx) => tx.status === "pending" || tx.status === "completed")
         .map((tx) => {
-          const foundUser = users.find((u) => u._id === tx.user);
+          const foundUser = users.find((u) => u._id === tx.userId);
           const tokenPrice =
             parseFloat(tx.tokenPriceUSD) > 0
-              ? parseFloat(tx.tokenPrice)
+              ? parseFloat(tx.tokenPriceUSD)
               : 0.0002;
 
           return {
@@ -138,7 +133,7 @@ const Index = () => {
           stat.title.includes("Transactions")
             ? {
                 ...stat,
-                value: txList.length.toLocaleString(),
+                value: transactions.length.toLocaleString(),
                 change: `${
                   totalPercentChange >= 0 ? "+" : ""
                 }${totalPercentChange.toFixed(2)}%`,
@@ -146,7 +141,7 @@ const Index = () => {
             : stat.title.includes("Pending")
             ? {
                 ...stat,
-                value: pendingTxList.length,
+                value: pendingTxList.length.toLocaleString(),
                 change: `${
                   pendingPercentChange >= 0 ? "+" : ""
                 }${pendingPercentChange.toFixed(2)}%`,
@@ -168,9 +163,9 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    getAllUsers();
-    getAllTransactions();
-  }, [getAllUsers, getAllTransactions]);
+    covertUsersData();
+    convertTransactionsData();
+  }, [covertUsersData, convertTransactionsData]);
 
   return (
     <div className="space-y-6">

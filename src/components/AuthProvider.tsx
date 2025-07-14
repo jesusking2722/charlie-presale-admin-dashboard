@@ -4,7 +4,7 @@ import { login as apiLogin } from "@/lib/scripts/auth.scripts";
 import { setAuthToken } from "@/lib/fetchInstance";
 
 interface User {
-  id: string;
+  _id: string;
   email: string;
   name: string;
   role: string;

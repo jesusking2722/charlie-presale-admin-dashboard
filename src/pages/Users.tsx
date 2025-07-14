@@ -1,61 +1,82 @@
+import { useCallback, useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { fetchAllUsers } from "@/lib/scripts/users.scripts";
+import { formatDateIntoISOString } from "@/lib/utils";
+import { fetchAllTransactions } from "@/lib/scripts/transactions.scripts";
+import { ITransaction } from "@/types";
 
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
+type TUser = {
+  _id: string;
+  name: string;
+  email: string;
+  registeredDate: string;
+  totalTransactions: number;
+  totalSpent: number;
+  balance: string;
+};
 
 const Users = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<TUser[]>([]);
+  const [transactions, setTransactions] = useState<ITransaction[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  // Mock user data
-  const users = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      status: 'active',
-      registeredDate: '2024-01-15',
-      totalTransactions: 5,
-      totalSpent: '$2,500'
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      status: 'inactive',
-      registeredDate: '2024-01-10',
-      totalTransactions: 2,
-      totalSpent: '$800'
-    },
-    {
-      id: '3',
-      name: 'Bob Johnson',
-      email: 'bob@example.com',
-      status: 'active',
-      registeredDate: '2024-01-20',
-      totalTransactions: 8,
-      totalSpent: '$4,200'
-    },
-    {
-      id: '4',
-      name: 'Alice Brown',
-      email: 'alice@example.com',
-      status: 'pending',
-      registeredDate: '2024-01-25',
-      totalTransactions: 1,
-      totalSpent: '$300'
+  const getAllUsers = useCallback(async () => {
+    try {
+      const response = await fetchAllUsers();
+      const usersList = response?.data?.users || [];
+
+      if (usersList.length > 0) {
+        const formattedUsersList = usersList.map((user) => ({
+          ...user,
+          registeredDate: formatDateIntoISOString(user.createdAt),
+        }));
+      }
+    } catch (error) {
+      console.error("get all users error: ", error);
     }
-  ];
+  }, []);
+
+  const getAllTransactions = useCallback(async () => {
+    try {
+      const response = await fetchAllTransactions();
+
+      const txList = response?.data?.transactions || [];
+
+      setTransactions(txList);
+    } catch (error) {
+      console.error("get all transactions error: ", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    getAllTransactions();
+    getAllUsers();
+  }, [getAllTransactions, getAllUsers]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(users.map(user => user.id));
+      setSelectedUsers(users.map((user) => user._id));
     } else {
       setSelectedUsers([]);
     }
@@ -65,18 +86,19 @@ const Users = () => {
     if (checked) {
       setSelectedUsers([...selectedUsers, userId]);
     } else {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const baseClasses = "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
+    const baseClasses =
+      "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
     switch (status) {
-      case 'active':
+      case "active":
         return `${baseClasses} bg-green-100 text-green-800`;
-      case 'inactive':
+      case "inactive":
         return `${baseClasses} bg-red-100 text-red-800`;
-      case 'pending':
+      case "pending":
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
@@ -111,7 +133,7 @@ const Users = () => {
                 className="pl-10"
               />
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="select-all"
@@ -147,29 +169,26 @@ const Users = () => {
                   </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead>Transactions</TableHead>
                   <TableHead>Total Spent</TableHead>
+                  <TableHead>Balance</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user._id}>
                     <TableCell>
                       <Checkbox
-                        checked={selectedUsers.includes(user.id)}
-                        onCheckedChange={(checked) => handleSelectUser(user.id, checked as boolean)}
+                        checked={selectedUsers.includes(user._id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectUser(user._id, checked as boolean)
+                        }
                       />
                     </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <span className={getStatusBadge(user.status)}>
-                        {user.status}
-                      </span>
-                    </TableCell>
                     <TableCell>{user.registeredDate}</TableCell>
                     <TableCell>{user.totalTransactions}</TableCell>
                     <TableCell>{user.totalSpent}</TableCell>
@@ -181,7 +200,11 @@ const Users = () => {
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
