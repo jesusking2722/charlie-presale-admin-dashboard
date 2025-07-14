@@ -143,17 +143,6 @@ const Users = () => {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="select-all"
-                checked={selectedUsers.length === users.length}
-                onCheckedChange={handleSelectAll}
-              />
-              <label htmlFor="select-all" className="text-sm font-medium">
-                Select All
-              </label>
-            </div>
-
             {/* <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <Filter className="h-4 w-4 mr-2" />
@@ -174,7 +163,11 @@ const Users = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
-                    <Checkbox />
+                    <Checkbox
+                      id="select-all"
+                      checked={selectedUsers.length === users.length}
+                      onCheckedChange={handleSelectAll}
+                    />
                   </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>

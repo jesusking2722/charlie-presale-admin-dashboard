@@ -34,6 +34,7 @@ import {
   Copy,
   CheckCheck,
   Loader,
+  Inbox,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useData } from "@/components/DataProvider";
@@ -58,6 +59,7 @@ type TTransaction = {
   date: string;
   receiptAddress: string;
   hash: string | null;
+  stripeStatus: string | null;
 };
 
 const Transactions = () => {
@@ -83,6 +85,9 @@ const Transactions = () => {
 
   // Mock transaction data
   const [formattedTransactions, setFormattedTransactions] = useState<
+    TTransaction[]
+  >([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<
     TTransaction[]
   >([]);
 
@@ -166,6 +171,8 @@ const Transactions = () => {
     switch (status) {
       case "completed":
         return `${baseClasses} bg-green-100 text-green-800`;
+      case "succeeded":
+        return `${baseClasses} bg-green-100 text-green-800`;
       case "pending":
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
       case "failed":
@@ -229,15 +236,28 @@ const Transactions = () => {
             receiptAddress: tx.to,
             hash: tx.txHash,
             date: formattedDate,
+            stripeStatus: tx.stripeStatus,
           };
         }
       );
 
       setFormattedTransactions(formattedTransactionList);
+      setFilteredTransactions(formattedTransactionList);
     };
 
     covertTransactionData();
   }, [users, transactions]);
+
+  useEffect(() => {
+    if (statusFilter !== "all") {
+      const filteredTransactionsList = formattedTransactions.filter(
+        (tx) => tx.type === statusFilter.toLowerCase()
+      );
+      setFilteredTransactions(filteredTransactionsList);
+    } else {
+      setFilteredTransactions(formattedTransactions);
+    }
+  }, [statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -270,7 +290,7 @@ const Transactions = () => {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <Checkbox
                 id="select-all-tx"
                 checked={selectedTransactions.length === transactions.length}
@@ -279,7 +299,7 @@ const Transactions = () => {
               <label htmlFor="select-all-tx" className="text-sm font-medium">
                 Select All
               </label>
-            </div>
+            </div> */}
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
@@ -306,15 +326,17 @@ const Transactions = () => {
                   <TableHead>Transaction ID</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Amount</TableHead>
+                  <TableHead>Stripe Status</TableHead>
                   <TableHead>CHRLE Tokens</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Transaction Status</TableHead>
                   <TableHead>Transaction Hash</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {formattedTransactions.map((tx) => (
+                {filteredTransactions.map((tx) => (
                   <TableRow key={tx._id}>
                     <TableCell>
                       <Checkbox
@@ -329,6 +351,11 @@ const Transactions = () => {
                     </TableCell>
                     <TableCell>{tx.userEmail}</TableCell>
                     <TableCell>{tx.amount}</TableCell>
+                    <TableCell>
+                      <span className={getStatusBadge(tx.stripeStatus)}>
+                        {tx.stripeStatus}
+                      </span>
+                    </TableCell>
                     <TableCell>{tx.chrleAmount} CHRLE</TableCell>
                     <TableCell>
                       <span className={getStatusBadge(tx.status)}>
@@ -377,11 +404,15 @@ const Transactions = () => {
                                 </div>
                                 <div>
                                   <label className="text-sm font-medium text-muted-foreground">
-                                    Status
+                                    Stripe Status
                                   </label>
                                   <p>
-                                    <span className={getStatusBadge(tx.status)}>
-                                      {tx.status}
+                                    <span
+                                      className={getStatusBadge(
+                                        tx.stripeStatus
+                                      )}
+                                    >
+                                      {tx.stripeStatus}
                                     </span>
                                   </p>
                                 </div>
@@ -403,6 +434,16 @@ const Transactions = () => {
                                   </label>
                                   <p className="font-medium">
                                     {tx.chrleAmount} CHRLE
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Transaction Status
+                                  </label>
+                                  <p>
+                                    <span className={getStatusBadge(tx.status)}>
+                                      {tx.status}
+                                    </span>
                                   </p>
                                 </div>
                                 <div className="col-span-2">
@@ -561,6 +602,13 @@ const Transactions = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {filteredTransactions.length === 0 && (
+              <div className="w-full flex flex-col items-center justify-center gap-4 p-14">
+                <Inbox className="h-8 w-8 text-gray-400" />
+                <p className="text-gray-400">No transactions found.</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
