@@ -47,6 +47,7 @@ import {
 import { useWeb3 } from "@/hooks/use-web3";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { transferCHRLEToUser } from "@/lib/scripts/web3.scripts";
+import * as XLSX from "xlsx";
 
 type TTransaction = {
   _id: string;
@@ -90,14 +91,6 @@ const Transactions = () => {
   const [filteredTransactions, setFilteredTransactions] = useState<
     TTransaction[]
   >([]);
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedTransactions(formattedTransactions.map((tx) => tx._id));
-    } else {
-      setSelectedTransactions([]);
-    }
-  };
 
   const handleSelectTransaction = (txId: string, checked: boolean) => {
     if (checked) {
@@ -214,6 +207,29 @@ const Transactions = () => {
     );
   };
 
+  const handleExport = () => {
+    const data = formattedTransactions.map((tx) => ({
+      "Transaction ID": tx._id,
+      Type: tx.type,
+      "User Email": tx.userEmail,
+      "Fiat Amount": tx.amount,
+      "CHRLE Amount": tx.chrleAmount,
+      Status: tx.status,
+      "Receipt Address": tx.receiptAddress,
+      "Transaction Hash": tx.hash,
+      Date: tx.date,
+      "Stripe Status": tx.stripeStatus,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+
+    const fileName = `transactions_${new Date().toISOString()}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   useEffect(() => {
     const covertTransactionData = () => {
       const formattedTransactionList: TTransaction[] = transactions.map(
@@ -257,7 +273,7 @@ const Transactions = () => {
     } else {
       setFilteredTransactions(formattedTransactions);
     }
-  }, [statusFilter]);
+  }, [statusFilter, formattedTransactions]);
 
   return (
     <div className="space-y-6">
@@ -274,7 +290,9 @@ const Transactions = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Transactions ({transactions.length})</span>
-            <Button size="sm">Export Data</Button>
+            <Button size="sm" onClick={handleExport}>
+              Export Data
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -289,17 +307,6 @@ const Transactions = () => {
                 className="pl-10"
               />
             </div>
-
-            {/* <div className="flex items-center space-x-2">
-              <Checkbox
-                id="select-all-tx"
-                checked={selectedTransactions.length === transactions.length}
-                onCheckedChange={handleSelectAll}
-              />
-              <label htmlFor="select-all-tx" className="text-sm font-medium">
-                Select All
-              </label>
-            </div> */}
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
