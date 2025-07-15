@@ -105,6 +105,7 @@ const Navbar = () => {
                 <Button
                   variant="outline"
                   className="justify-start space-x-3 h-12"
+                  onClick={() => open()}
                 >
                   <Wallet className="h-5 w-5" />
                   <span>

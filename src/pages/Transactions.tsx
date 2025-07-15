@@ -75,7 +75,6 @@ const Transactions = () => {
   const [isReceiptWalletAddressCopied, setIsReceiptWalletAddressCopied] =
     useState<boolean>(false);
   const [sendLoading, setSendLoading] = useState<boolean>(false);
-  const [sendOpen, setSendOpen] = useState<boolean>(false);
 
   const { toast } = useToast();
 
@@ -117,8 +116,6 @@ const Transactions = () => {
         tx.receiptAddress
       );
 
-      debugger;
-
       if (txResult) {
         const { hash, timestamp } = txResult;
 
@@ -141,8 +138,6 @@ const Transactions = () => {
             description:
               "CHRLE tokens have been transferred to the user's wallet.",
           });
-
-          setSendOpen(false);
         } else {
           toast({
             title: "Transfer failed",
@@ -414,7 +409,7 @@ const Transactions = () => {
                     <TableCell>{tx.updatedAt}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        <Dialog open={sendOpen} onOpenChange={setSendOpen}>
+                        <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4" />
@@ -624,7 +619,10 @@ const Transactions = () => {
                                   <Button
                                     variant="secondary"
                                     className="w-full flex items-center justify-center gap-1 transition-all duration-200"
-                                    disabled={sendLoading}
+                                    disabled={
+                                      sendLoading ||
+                                      (tx.status as string) === "completed"
+                                    }
                                     onClick={() => {
                                       if (!isConnected) {
                                         open();
@@ -642,8 +640,10 @@ const Transactions = () => {
                                         </span>
                                         <Loader className="h-4 w-4 text-gray-400" />
                                       </>
-                                    ) : (
+                                    ) : tx.status === "pending" ? (
                                       `Send ${tx.chrleAmount} CHRLE`
+                                    ) : (
+                                      "Completed"
                                     )}
                                   </Button>
                                 </div>

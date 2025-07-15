@@ -126,7 +126,7 @@ const Index = () => {
 
       setStats((prevStats) =>
         prevStats.map((stat) =>
-          stat.title.includes("Transactions")
+          stat.title.includes("Total Transactions")
             ? {
                 ...stat,
                 value: transactions.length.toLocaleString(),
