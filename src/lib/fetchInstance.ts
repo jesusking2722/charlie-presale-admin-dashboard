@@ -1,5 +1,6 @@
 const API_ORIGINAL_ENDPOINT =
-  import.meta.env.VITE_API_URL || "http://localhost:5001/api-admin";
+  import.meta.env.VITE_API_URL ||
+  "https://charlie-presale-backend-production.up.railway.app/api-admin";
 
 // Function to get headers including Authorization token
 const getHeaders = () => {

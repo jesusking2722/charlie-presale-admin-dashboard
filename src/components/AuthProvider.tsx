@@ -66,11 +66,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const { user, token } = response.data;
         setAuthToken(token);
         setUser(user);
+        window.location.reload();
         return true;
       } else {
         toast({
           title: "Authenticatino failed",
           description: response.message,
+          variant: "destructive",
         });
         return false;
       }
@@ -78,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       toast({
         title: "Authentication failed",
         description: "Something went wrong",
+        variant: "destructive",
       });
       return false;
     }

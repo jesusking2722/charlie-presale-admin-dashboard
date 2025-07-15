@@ -57,6 +57,7 @@ export const useWeb3 = () => {
         toast({
           title: "Transaction failed",
           description: "Not enough CHRLE tokens in your wallet!",
+          variant: "destructive",
         });
         return null;
       }
@@ -77,6 +78,7 @@ export const useWeb3 = () => {
         toast({
           title: "Transaction failed",
           description: "Not enough BNB for gas fee!",
+          variant: "destructive",
         });
         return null;
       }
@@ -96,7 +98,7 @@ export const useWeb3 = () => {
       toast({
         title: "Transaction failed",
         description: "Blockchain has issue",
-        color: "red",
+        variant: "destructive",
       });
       return null;
     }

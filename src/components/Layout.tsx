@@ -1,14 +1,10 @@
-
-import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from './AuthProvider';
-import Navbar from './Navbar';
+import { Outlet } from "react-router-dom";
+import Navbar from "./Navbar";
 
 const Layout = () => {
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  // if (!isAuthenticated) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
   return (
     <div className="min-h-screen bg-background">

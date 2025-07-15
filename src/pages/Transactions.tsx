@@ -75,6 +75,7 @@ const Transactions = () => {
   const [isReceiptWalletAddressCopied, setIsReceiptWalletAddressCopied] =
     useState<boolean>(false);
   const [sendLoading, setSendLoading] = useState<boolean>(false);
+  const [sendOpen, setSendOpen] = useState<boolean>(false);
 
   const { toast } = useToast();
 
@@ -144,8 +145,14 @@ const Transactions = () => {
             description:
               "CHRLE tokens have been transferred to the user's wallet.",
           });
+
+          setSendOpen(false);
         } else {
-          toast({ title: "Transfer failed", description: response.message });
+          toast({
+            title: "Transfer failed",
+            description: response.message,
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {
@@ -153,6 +160,7 @@ const Transactions = () => {
       toast({
         title: "Transaction failed",
         description: "Something went wrong",
+        variant: "destructive",
       });
     } finally {
       setSendLoading(false);
@@ -171,6 +179,10 @@ const Transactions = () => {
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
       case "failed":
         return `${baseClasses} bg-red-100 text-red-800`;
+      case "buy":
+        return `${baseClasses} bg-green-100 text-green-800`;
+      case "withdraw":
+        return `${baseClasses} bg-blue-100 text-blue-800`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`;
     }
@@ -271,7 +283,7 @@ const Transactions = () => {
 
     // Apply status filter
     if (statusFilter !== "all") {
-      temp = temp.filter((tx) => tx.type === statusFilter.toLowerCase());
+      temp = temp.filter((tx) => tx.status === statusFilter.toLowerCase());
     }
 
     // Apply search filter
@@ -349,11 +361,12 @@ const Transactions = () => {
                     <Checkbox />
                   </TableHead>
                   <TableHead>Transaction ID</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Stripe Status</TableHead>
+                  {/* <TableHead>Stripe Status</TableHead> */}
                   <TableHead>CHRLE Tokens</TableHead>
-                  <TableHead>Transaction Status</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Transaction Hash</TableHead>
                   <TableHead>Created Date</TableHead>
                   <TableHead>Updated Date</TableHead>
@@ -373,15 +386,18 @@ const Transactions = () => {
                       />
                     </TableCell>
                     <TableCell className="font-medium">
-                      #{tx._id.padStart(4, "0")}
+                      #{truncateTxHash(tx._id)}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <span className={getStatusBadge(tx.type)}>{tx.type}</span>
                     </TableCell>
                     <TableCell>{tx.userEmail}</TableCell>
                     <TableCell>{tx.amount}</TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <span className={getStatusBadge(tx.stripeStatus)}>
                         {tx.stripeStatus}
                       </span>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>{tx.chrleAmount} CHRLE</TableCell>
                     <TableCell>
                       <span className={getStatusBadge(tx.status)}>
@@ -393,7 +409,7 @@ const Transactions = () => {
                     <TableCell>{tx.updatedAt}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        <Dialog>
+                        <Dialog open={sendOpen} onOpenChange={setSendOpen}>
                           <DialogTrigger asChild>
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4" />

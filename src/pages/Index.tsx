@@ -1,6 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchAllUsers } from "@/lib/scripts/users.scripts";
-import { fetchAllTransactions } from "@/lib/scripts/transactions.scripts";
 import {
   calculateMonthlyRevenueChange,
   calculateMonthlyTransactionChange,
@@ -9,8 +7,7 @@ import {
   formatNumber,
 } from "@/lib/utils";
 import { Users, CreditCard, TrendingUp, DollarSign } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { ITransaction, IUser } from "@/types";
+import { useEffect, useState } from "react";
 import { useData } from "@/components/DataProvider";
 
 const initialStats = [
@@ -251,19 +248,28 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <button className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors">
+              <button
+                className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
+                onClick={() => (window.location.href = "/transactions")}
+              >
                 <p className="font-medium">Process Pending Transactions</p>
                 <p className="text-sm text-muted-foreground">
                   Review and approve pending CHRLE token transfers
                 </p>
               </button>
-              <button className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors">
+              <button
+                className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
+                onClick={() => (window.location.href = "/users")}
+              >
                 <p className="font-medium">Export User Data</p>
                 <p className="text-sm text-muted-foreground">
                   Download user information and transaction history
                 </p>
               </button>
-              <button className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors">
+              <button
+                className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
+                onClick={() => (window.location.href = "/settings")}
+              >
                 <p className="font-medium">System Settings</p>
                 <p className="text-sm text-muted-foreground">
                   Configure dashboard preferences and security
