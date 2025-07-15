@@ -3,16 +3,11 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { login as apiLogin, fetchMe } from "@/lib/scripts/auth.scripts";
 import { setAuthToken } from "@/lib/fetchInstance";
 import { jwtDecode } from "jwt-decode";
-
-interface User {
-  _id: string;
-  email: string;
-  name: string;
-  role: string;
-}
+import { IUser } from "@/types";
 
 interface AuthContextType {
-  user: User | null;
+  user: IUser | null;
+  setUser: (user: IUser) => void;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -31,7 +26,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<IUser | null>(null);
 
   const { toast } = useToast();
 
@@ -98,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         login,
         logout,
         isAuthenticated: !!user,

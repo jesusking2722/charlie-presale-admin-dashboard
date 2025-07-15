@@ -13,11 +13,16 @@ import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/ThemeProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
-import { Moon, Sun, User, Save } from "lucide-react";
+import { Moon, Sun, User, Save, Loader } from "lucide-react";
+import { IUser } from "@/types";
+import { updateUserById } from "@/lib/scripts/users.scripts";
 
 const Settings = () => {
+  const [updateLoading, setUpdateLoading] = useState<boolean>(false);
+  const [resetLoading, setResetLoading] = useState<boolean>(false);
+
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { toast } = useToast();
 
   const [profile, setProfile] = useState({
@@ -28,17 +33,59 @@ const Settings = () => {
     confirmPassword: "",
   });
 
-  const handleProfileUpdate = (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock profile update
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been updated successfully.",
-    });
+
+    try {
+      setUpdateLoading(true);
+
+      const updatingFields: Partial<IUser> = {
+        ...user,
+        role: "admin",
+        name: profile.name,
+        email: profile.email,
+      };
+
+      const response = await updateUserById(user._id as string, updatingFields);
+
+      if (response.ok) {
+        const { user } = response.data;
+        setUser(user);
+        toast({
+          title: "Profile Updated",
+          description:
+            "Your profile information has been updated successfully.",
+        });
+      } else {
+        toast({
+          title: "Profile update failed",
+          description: response.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Profile update failed",
+        description: "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdateLoading(false);
+    }
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (profile.currentPassword !== user?.password) {
+      toast({
+        title: "Error",
+        description: "Incorrect current password",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (profile.newPassword !== profile.confirmPassword) {
       toast({
         title: "Error",
@@ -47,17 +94,46 @@ const Settings = () => {
       });
       return;
     }
-    // Mock password change
-    toast({
-      title: "Password Changed",
-      description: "Your password has been updated successfully.",
-    });
-    setProfile((prev) => ({
-      ...prev,
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    }));
+
+    try {
+      setResetLoading(true);
+
+      const updatingFileds: Partial<IUser> = {
+        ...user,
+        password: profile.confirmPassword,
+      };
+
+      const response = await updateUserById(user._id as string, updatingFileds);
+
+      if (response.ok) {
+        const { user } = response.data;
+        setUser(user);
+        toast({
+          title: "Password Changed",
+          description: "Your password has been updated successfully.",
+        });
+        setProfile((prev) => ({
+          ...prev,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
+      } else {
+        toast({
+          title: "Password reset failed",
+          description: response.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Password reset failed",
+        description: "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -134,8 +210,17 @@ const Settings = () => {
                 />
               </div>
               <Button type="submit" className="w-full">
-                <Save className="h-4 w-4 mr-2" />
-                Update Profile
+                {!updateLoading ? (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Update Profile
+                  </>
+                ) : (
+                  <>
+                    Updating...
+                    <Loader className="h-4 w-4 mr-2" />
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
@@ -195,7 +280,16 @@ const Settings = () => {
                   />
                 </div>
               </div>
-              <Button type="submit">Change Password</Button>
+              <Button type="submit">
+                {!resetLoading ? (
+                  "Change Password"
+                ) : (
+                  <>
+                    Changing...
+                    <Loader className="h-4 w-4 mr-2" />
+                  </>
+                )}
+              </Button>
             </form>
           </CardContent>
         </Card>
