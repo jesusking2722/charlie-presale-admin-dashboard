@@ -9,6 +9,7 @@ import {
 import { Users, CreditCard, TrendingUp, DollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useData } from "@/components/DataProvider";
+import { useNavigate } from "react-router-dom";
 
 const initialStats = [
   {
@@ -63,6 +64,8 @@ const Index = () => {
   >([]);
 
   const { users, transactions } = useData();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const covertUsersData = () => {
@@ -250,7 +253,7 @@ const Index = () => {
             <div className="space-y-3">
               <button
                 className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
-                onClick={() => (window.location.href = "/transactions")}
+                onClick={() => navigate("/transactions")}
               >
                 <p className="font-medium">Process Pending Transactions</p>
                 <p className="text-sm text-muted-foreground">
@@ -259,7 +262,7 @@ const Index = () => {
               </button>
               <button
                 className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
-                onClick={() => (window.location.href = "/users")}
+                onClick={() => navigate("/users")}
               >
                 <p className="font-medium">Export User Data</p>
                 <p className="text-sm text-muted-foreground">
@@ -268,7 +271,7 @@ const Index = () => {
               </button>
               <button
                 className="w-full p-3 text-left border rounded-lg hover:bg-muted transition-colors"
-                onClick={() => (window.location.href = "/settings")}
+                onClick={() => navigate("/settings")}
               >
                 <p className="font-medium">System Settings</p>
                 <p className="text-sm text-muted-foreground">

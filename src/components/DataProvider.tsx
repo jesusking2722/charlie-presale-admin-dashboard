@@ -49,7 +49,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     txId: string,
     updatingData: Partial<ITransaction>
   ) => {
-    setUsers((prevTransactions) =>
+    setTransactions((prevTransactions) =>
       prevTransactions.map((tx) =>
         tx._id === txId ? { ...tx, ...updatingData } : tx
       )

@@ -117,6 +117,8 @@ const Transactions = () => {
         tx.receiptAddress
       );
 
+      debugger;
+
       if (txResult) {
         const { hash, timestamp } = txResult;
 
@@ -135,6 +137,12 @@ const Transactions = () => {
           updateTransactionById(transaction._id, transaction);
 
           setFormattedTransactions((prev) =>
+            prev.map((tx) =>
+              tx._id === transaction._id ? { ...tx, status: "completed" } : tx
+            )
+          );
+
+          setFilteredTransactions((prev) =>
             prev.map((tx) =>
               tx._id === transaction._id ? { ...tx, status: "completed" } : tx
             )
@@ -246,7 +254,16 @@ const Transactions = () => {
 
   useEffect(() => {
     const covertTransactionData = () => {
-      const formattedTransactionList: TTransaction[] = transactions.map(
+      const sortedTransactions = [...transactions].sort((a, b) => {
+        if (a.status === "pending" && b.status !== "pending") return -1;
+        if (a.status !== "pending" && b.status === "pending") return 1;
+
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      const formattedTransactionList: TTransaction[] = sortedTransactions.map(
         (tx) => {
           const userEmail =
             users.find((user) => user._id === tx.userId)?.email ?? "Unknown";

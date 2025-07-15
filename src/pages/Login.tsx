@@ -59,8 +59,12 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mb-4">
-            <Lock className="h-6 w-6 text-white" />
+          <div className="w-full flex items-center justify-center">
+            <img
+              src="./assets/logo.png"
+              alt="Charlie Unicorn AI"
+              className="w-20 h-auto object-cover"
+            />
           </div>
           <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
           <CardDescription>
