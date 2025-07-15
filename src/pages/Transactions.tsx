@@ -136,18 +136,6 @@ const Transactions = () => {
           updateUserById(user._id, user);
           updateTransactionById(transaction._id, transaction);
 
-          setFormattedTransactions((prev) =>
-            prev.map((tx) =>
-              tx._id === transaction._id ? { ...tx, status: "completed" } : tx
-            )
-          );
-
-          setFilteredTransactions((prev) =>
-            prev.map((tx) =>
-              tx._id === transaction._id ? { ...tx, status: "completed" } : tx
-            )
-          );
-
           toast({
             title: "Tokens Sent Successfully",
             description:
