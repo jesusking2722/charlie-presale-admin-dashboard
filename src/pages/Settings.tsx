@@ -1,26 +1,31 @@
-
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useTheme } from '@/components/ThemeProvider';
-import { useAuth } from '@/components/AuthProvider';
-import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, User, Save } from 'lucide-react';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useTheme } from "@/components/ThemeProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
+import { Moon, Sun, User, Save } from "lucide-react";
 
 const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [profile, setProfile] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    name: user?.name || "",
+    email: user?.email || "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const handleProfileUpdate = (e: React.FormEvent) => {
@@ -38,7 +43,7 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "New passwords do not match.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -47,11 +52,11 @@ const Settings = () => {
       title: "Password Changed",
       description: "Your password has been updated successfully.",
     });
-    setProfile(prev => ({
+    setProfile((prev) => ({
       ...prev,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     }));
   };
 
@@ -69,7 +74,11 @@ const Settings = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              {theme === "dark" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
               <span>Theme Settings</span>
             </CardTitle>
             <CardDescription>
@@ -85,7 +94,7 @@ const Settings = () => {
                 </p>
               </div>
               <Switch
-                checked={theme === 'dark'}
+                checked={theme === "dark"}
                 onCheckedChange={toggleTheme}
               />
             </div>
@@ -99,9 +108,7 @@ const Settings = () => {
               <User className="h-5 w-5" />
               <span>Profile Information</span>
             </CardTitle>
-            <CardDescription>
-              Update your personal information
-            </CardDescription>
+            <CardDescription>Update your personal information</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleProfileUpdate} className="space-y-4">
@@ -110,7 +117,9 @@ const Settings = () => {
                 <Input
                   id="name"
                   value={profile.name}
-                  onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setProfile((prev) => ({ ...prev, name: e.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -119,7 +128,9 @@ const Settings = () => {
                   id="email"
                   type="email"
                   value={profile.email}
-                  onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) =>
+                    setProfile((prev) => ({ ...prev, email: e.target.value }))
+                  }
                 />
               </div>
               <Button type="submit" className="w-full">
@@ -147,7 +158,12 @@ const Settings = () => {
                     id="current-password"
                     type="password"
                     value={profile.currentPassword}
-                    onChange={(e) => setProfile(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    onChange={(e) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        currentPassword: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -156,7 +172,12 @@ const Settings = () => {
                     id="new-password"
                     type="password"
                     value={profile.newPassword}
-                    onChange={(e) => setProfile(prev => ({ ...prev, newPassword: e.target.value }))}
+                    onChange={(e) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        newPassword: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -165,19 +186,22 @@ const Settings = () => {
                     id="confirm-password"
                     type="password"
                     value={profile.confirmPassword}
-                    onChange={(e) => setProfile(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    onChange={(e) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        confirmPassword: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
-              <Button type="submit">
-                Change Password
-              </Button>
+              <Button type="submit">Change Password</Button>
             </form>
           </CardContent>
         </Card>
 
         {/* System Settings */}
-        <Card className="md:col-span-2">
+        {/* <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>System Configuration</CardTitle>
             <CardDescription>
@@ -228,7 +252,7 @@ const Settings = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

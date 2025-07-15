@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Eye, Copy, CheckCheck } from "lucide-react";
+import { Search, Eye, Copy, CheckCheck, Inbox } from "lucide-react";
 import {
   calculateTotalSpentDollars,
   formatDateIntoISOString,
@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import * as XLSX from "xlsx";
 
 type TUser = {
   _id: string;
@@ -42,6 +43,7 @@ type TUser = {
 
 const Users = () => {
   const [formattedUsers, setFormattedUsers] = useState<TUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<TUser[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isUserIdCopied, setIsUserIdCopied] = useState<boolean>(false);
@@ -82,6 +84,29 @@ const Users = () => {
     }, 2000);
   };
 
+  const handleExport = () => {
+    const exportData = users.map((user) => ({
+      ID: user._id,
+      Name: user.name || "-",
+      Email: user.email || "-",
+      Role: user.role,
+      EmailVerified: user.emailVerified ? "Yes" : "No",
+      WalletAddress: user.walletAddress || "-",
+      Balance: user.balance,
+      SignedInVia: user.signedOption,
+      CreatedAt: user.createdAt,
+      UpdatedAt: user.updatedAt,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+
+    const fileName = `users_${new Date().toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
+
   useEffect(() => {
     const covertUsersData = () => {
       if (users.length > 0) {
@@ -108,11 +133,30 @@ const Users = () => {
         });
 
         setFormattedUsers(formattedUsersList);
+        setFilteredUsers(formattedUsersList);
       }
     };
 
     covertUsersData();
   }, [users, transactions]);
+
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredUsers(formattedUsers);
+    } else {
+      const lowerSearch = searchTerm.toLowerCase();
+
+      const filtered = formattedUsers.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(lowerSearch) ||
+          user.email?.toLowerCase().includes(lowerSearch) ||
+          user.walletAddress?.toLowerCase().includes(lowerSearch) ||
+          user.balance?.toLowerCase().includes(lowerSearch)
+      );
+
+      setFilteredUsers(filtered);
+    }
+  }, [searchTerm, formattedUsers]);
 
   return (
     <div className="space-y-6">
@@ -127,7 +171,9 @@ const Users = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Users ({users.length})</span>
-            <Button size="sm">Export Data</Button>
+            <Button size="sm" onClick={handleExport}>
+              Export Data
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -180,7 +226,7 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {formattedUsers.map((user) => (
+                {filteredUsers.map((user) => (
                   <TableRow key={user._id}>
                     <TableCell>
                       <Checkbox
@@ -308,6 +354,13 @@ const Users = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {filteredUsers.length === 0 && (
+              <div className="w-full flex flex-col items-center justify-center gap-4 p-14">
+                <Inbox className="h-8 w-8 text-gray-400" />
+                <p className="text-gray-400">No users found.</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

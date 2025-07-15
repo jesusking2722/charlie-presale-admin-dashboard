@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -57,7 +57,8 @@ type TTransaction = {
   amount: string;
   chrleAmount: string;
   status: "pending" | "failed" | "completed";
-  date: string;
+  createdAt: string;
+  updatedAt: string;
   receiptAddress: string;
   hash: string | null;
   stripeStatus: string | null;
@@ -217,7 +218,8 @@ const Transactions = () => {
       Status: tx.status,
       "Receipt Address": tx.receiptAddress,
       "Transaction Hash": tx.hash,
-      Date: tx.date,
+      "Created Date": tx.createdAt,
+      "Updated Date": tx.updatedAt,
       "Stripe Status": tx.stripeStatus,
     }));
 
@@ -239,7 +241,6 @@ const Transactions = () => {
           const amount = `${getCurrencySymbol(tx.currency)}${formatNumber(
             tx.amountFiat / 100
           )}`;
-          const formattedDate = formatTransactionDate(tx.createdAt);
 
           return {
             _id: tx._id,
@@ -251,7 +252,8 @@ const Transactions = () => {
             status: tx.status,
             receiptAddress: tx.to,
             hash: tx.txHash,
-            date: formattedDate,
+            createdAt: formatTransactionDate(tx.createdAt),
+            updatedAt: formatTransactionDate(tx.updatedAt),
             stripeStatus: tx.stripeStatus,
           };
         }
@@ -265,15 +267,31 @@ const Transactions = () => {
   }, [users, transactions]);
 
   useEffect(() => {
+    let temp = [...formattedTransactions];
+
+    // Apply status filter
     if (statusFilter !== "all") {
-      const filteredTransactionsList = formattedTransactions.filter(
-        (tx) => tx.type === statusFilter.toLowerCase()
-      );
-      setFilteredTransactions(filteredTransactionsList);
-    } else {
-      setFilteredTransactions(formattedTransactions);
+      temp = temp.filter((tx) => tx.type === statusFilter.toLowerCase());
     }
-  }, [statusFilter, formattedTransactions]);
+
+    // Apply search filter
+    if (searchTerm.trim() !== "") {
+      const lowerSearch = searchTerm.toLowerCase();
+
+      temp = temp.filter(
+        (tx) =>
+          tx.userEmail?.toLowerCase().includes(lowerSearch) ||
+          tx.amount?.toLowerCase().includes(lowerSearch) ||
+          tx.chrleAmount?.toLowerCase().includes(lowerSearch) ||
+          tx.receiptAddress?.toLowerCase().includes(lowerSearch) ||
+          tx.hash?.toLowerCase().includes(lowerSearch) ||
+          tx.status?.toLowerCase().includes(lowerSearch) ||
+          tx.type?.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    setFilteredTransactions(temp);
+  }, [statusFilter, formattedTransactions, searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -337,7 +355,8 @@ const Transactions = () => {
                   <TableHead>CHRLE Tokens</TableHead>
                   <TableHead>Transaction Status</TableHead>
                   <TableHead>Transaction Hash</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead>Updated Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -370,7 +389,8 @@ const Transactions = () => {
                       </span>
                     </TableCell>
                     <TableCell>{truncateTxHash(tx.hash ?? "")}</TableCell>
-                    <TableCell>{tx.date}</TableCell>
+                    <TableCell>{tx.createdAt}</TableCell>
+                    <TableCell>{tx.updatedAt}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         <Dialog>
@@ -518,9 +538,16 @@ const Transactions = () => {
                                 )}
                                 <div className="col-span-2">
                                   <label className="text-sm font-medium text-muted-foreground">
-                                    Date
+                                    Created Date
                                   </label>
-                                  <p className="font-medium">{tx.date}</p>
+                                  <p className="font-medium">{tx.createdAt}</p>
+                                </div>
+
+                                <div className="col-span-2">
+                                  <label className="text-sm font-medium text-muted-foreground">
+                                    Updated Date
+                                  </label>
+                                  <p className="font-medium">{tx.updatedAt}</p>
                                 </div>
                               </div>
                             </div>
